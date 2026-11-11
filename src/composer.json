@@ -1,0 +1,18 @@
+{
+    "name": "immachakata/ci4-facades",
+    "description": "Use laravel like facades and functions for creating migration files, among other things",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Immachakata\\Ci4Facades\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Isaac Machakata",
+            "email": "hie@isaac.co.zw"
+        }
+    ],
+    "require": {}
+}
