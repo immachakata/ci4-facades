@@ -5,8 +5,11 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Immachakata\\Ci4Facades\\": "src/"
-        }
+            "IsaacMachakata\\Ci4Facades\\": "src/"
+        },
+        "classmap": [
+            "src/Ci4Facades.php"
+        ]
     },
     "authors": [
         {
@@ -14,5 +17,8 @@
             "email": "hie@isaac.co.zw"
         }
     ],
-    "require": {}
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "codeigniter4/framework": "^4.0"
+    }
 }
