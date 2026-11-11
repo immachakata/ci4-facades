@@ -17,9 +17,9 @@ composer require immachakata/ci4-facades
 
 ## Usage
 
-### Migrations
+### Migrations (`Schema` & `Ci4Facades` Trait)
 
-To use the migration helpers in your CodeIgniter 4 migration classes, import and include the `IsaacMachakata\Ci4Facades` trait inside your migration file:
+You can use either the `Schema` facade directly or the `IsaacMachakata\Ci4Facades` trait inside your CodeIgniter 4 migration classes:
 
 ```php
 <?php
@@ -28,6 +28,8 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 use IsaacMachakata\Ci4Facades;
+use IsaacMachakata\Ci4Facades\Blueprint;
+use IsaacMachakata\Ci4Facades\Schema;
 
 class CreateUsersTable extends Migration
 {
@@ -35,15 +37,48 @@ class CreateUsersTable extends Migration
 
     public function up()
     {
-        // Define your table schema using the trait's expressive methods
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     public function down()
     {
-        $this->forge->dropTable('users', true);
+        Schema::dropIfExists('users');
     }
 }
 ```
+
+Or using the trait helper methods (`$this->create()`, `$this->dropIfExists()`):
+
+```php
+$this->create('posts', function (Blueprint $table) {
+    $table->id();
+    $table->unsignedBigInteger('user_id');
+    $table->string('title');
+    $table->text('body')->nullable();
+    $table->timestamps();
+    $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+});
+```
+
+#### Available `Blueprint` Column Methods
+
+- `$table->id('id')` / `$table->increments('id')`
+- `$table->string('name', 255)` / `$table->char('code', 10)`
+- `$table->text('description')` / `$table->longText('content')`
+- `$table->integer('votes')` / `$table->bigInteger('views')` / `$table->unsignedBigInteger('user_id')`
+- `$table->boolean('is_admin')` / `$table->tinyInteger('status')`
+- `$table->decimal('amount', 8, 2)` / `$table->float('rating', 8, 2)`
+- `$table->date('birth_date')` / `$table->dateTime('published_at')` / `$table->timestamp('logged_at')`
+- `$table->timestamps()` / `$table->softDeletes()`
+- `$table->json('options')` / `$table->enum('status', ['draft', 'published'])`
+- Modifiers: `->nullable()`, `->default($val)`, `->unsigned()`, `->unique()`, `->primary()`, `->index()`, `->comment('...')`, `->after('col')`, `->first()`
 
 ### Logging (`Log` Facade)
 
@@ -66,7 +101,7 @@ Log::critical('Database connection failed');
 
 - [x] Migration traits (`use IsaacMachakata\Ci4Facades`)
 - [x] Logging facade (`Log::info("message")`)
-- [ ] Expressive schema builder helpers
+- [x] Expressive `Schema` & `Blueprint` builder helpers
 - [ ] Additional CodeIgniter 4 service facades
 
 ## Contributing
