@@ -117,4 +117,4 @@ Contributions, issues, and feature requests are welcome! Feel free to open an is
 
 ## License
 
-This package is open-sourced software licensed under the [MIT license](LICENSE).
+This package is open-sourced software licensed under the [MIT license](LICENSE.md).
