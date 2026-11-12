@@ -1,5 +1,8 @@
 # CI4 Facades
 
+![Packagist Version](https://img.shields.io/packagist/v/immachakata/ci4-facades)
+![Packagist Downloads](https://img.shields.io/packagist/dt/immachakata/ci4-facades)
+![Packagist License](https://img.shields.io/packagist/l/immachakata/ci4-facades)
 A lightweight PHP package for CodeIgniter 4 that brings clean, expressive, Laravel-like traits and facades to your project—starting with database migrations and logging.
 
 ## Requirements
