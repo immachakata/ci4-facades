@@ -50,6 +50,11 @@ class Blueprint
      */
     public function id(string $column = 'id', int $constraint = 20): ColumnDefinition
     {
+        if($column === "id"){
+            return $this->addColumn($column);
+        }
+
+        // explicitly define it column name different
         $col = $this->addColumn($column, [
             'type'           => 'BIGINT',
             'constraint'     => $constraint,
