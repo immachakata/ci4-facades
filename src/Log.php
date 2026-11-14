@@ -79,7 +79,7 @@ class Log
     public static function write(string $level, string $message, array $context = []): bool
     {
         if (function_exists('log_message')) {
-            return (bool) log_message($level, $message, $context);
+            return (bool) \log_message($level, $message, $context);
         }
 
         if (class_exists('\Config\Services')) {
