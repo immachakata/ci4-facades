@@ -100,11 +100,29 @@ Log::warning('Disk space is running low');
 Log::critical('Database connection failed');
 ```
 
+### Database transactions (`DB` Facade)
+
+Use `DB::transaction()` to commit when the callback completes successfully and roll back if it throws:
+
+```php
+use App\Models\Users;
+use IsaacMachakata\Ci4Facades\DB;
+
+$users = model(Users::class);
+
+DB::transaction(function () use ($users) {
+    $users->insert(['name' => 'Ada']);
+});
+```
+
+Use models as usual inside the callback. Their writes participate in the transaction when they use the same database connection as `DB::transaction()`. The callback may also accept the connection as an argument when you need to run queries directly, and its return value is returned by `transaction()`.
+
 ## Roadmap
 
 - [x] Migration traits (`use IsaacMachakata\Ci4Facades`)
 - [x] Logging facade (`Log::info("message")`)
 - [x] Expressive `Schema` & `Blueprint` builder helpers
+- [x] Database transactions (`DB::transaction()`)
 - [ ] Additional CodeIgniter 4 service facades
 
 ## Contributing
