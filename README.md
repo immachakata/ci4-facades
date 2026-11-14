@@ -117,6 +117,14 @@ DB::transaction(function () use ($users) {
 
 Use models as usual inside the callback. Their writes participate in the transaction when they use the same database connection as `DB::transaction()`. The callback may also accept the connection as an argument when you need to run queries directly, and its return value is returned by `transaction()`.
 
+Alternatively, you can use the database connection passed to the callback:
+
+```php
+DB::transaction(function ($db) {
+    $db->table('users')->insert(['name' => 'Ada']);
+});
+```
+
 ## Roadmap
 
 - [x] Migration traits (`use IsaacMachakata\Ci4Facades`)
