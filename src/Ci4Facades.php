@@ -4,6 +4,7 @@ namespace IsaacMachakata;
 
 use Closure;
 use IsaacMachakata\Ci4Facades\Blueprint;
+use IsaacMachakata\Ci4Facades\DB;
 use IsaacMachakata\Ci4Facades\Log;
 use IsaacMachakata\Ci4Facades\Schema;
 
@@ -69,5 +70,13 @@ trait Ci4Facades
     protected function log(string $level, string $message, array $context = []): bool
     {
         return Log::write($level, $message, $context);
+    }
+
+    /**
+     * Run a callback inside a database transaction.
+     */
+    protected function transaction(Closure $callback)
+    {
+        return DB::transaction($callback);
     }
 }

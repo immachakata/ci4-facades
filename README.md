@@ -125,6 +125,14 @@ DB::transaction(function ($db) {
 });
 ```
 
+Classes using the `Ci4Facades` trait can use the equivalent `$this->transaction()` helper:
+
+```php
+$this->transaction(function () use ($users) {
+    $users->insert(['name' => 'Ada']);
+});
+```
+
 ## Roadmap
 
 - [x] Migration traits (`use IsaacMachakata\Ci4Facades`)
