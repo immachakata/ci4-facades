@@ -15,7 +15,7 @@ class Blueprint
     protected array $columns = [];
 
     /**
-     * @var array<int, array{columns: string|array, primary: bool, unique: bool}>
+     * @var array<int, array{columns: string|array, primary: bool, unique: bool, name: string}>
      */
     protected array $keys = [];
 
@@ -29,9 +29,32 @@ class Blueprint
      */
     protected array $dropColumns = [];
 
+    /**
+     * @var array<int, string>
+     */
+    protected array $dropForeignKeys = [];
+
+    /**
+     * @var array<int, string>
+     */
+    protected array $dropKeys = [];
+
+    /**
+     * @var array<int, string>
+     */
+    protected array $dropPrimaryKeys = [];
+
     public function __construct(string $table)
     {
         $this->table = $table;
+    }
+
+    /**
+     * Get the table name associated with this blueprint.
+     */
+    public function getTable(): string
+    {
+        return $this->table;
     }
 
     /**
@@ -112,6 +135,16 @@ class Blueprint
     }
 
     /**
+     * Create a MEDIUMTEXT column.
+     */
+    public function mediumText(string $column): ColumnDefinition
+    {
+        return $this->addColumn($column, [
+            'type' => 'MEDIUMTEXT',
+        ]);
+    }
+
+    /**
      * Create a LONGTEXT column.
      */
     public function longText(string $column): ColumnDefinition
@@ -130,6 +163,33 @@ class Blueprint
             'type'       => 'INT',
             'constraint' => $constraint,
         ]);
+    }
+
+    /**
+     * Create an unsigned INT column.
+     */
+    public function unsignedInteger(string $column, int $constraint = 11): ColumnDefinition
+    {
+        return $this->integer($column, $constraint)->unsigned();
+    }
+
+    /**
+     * Create a SMALLINT column.
+     */
+    public function smallInteger(string $column, int $constraint = 6): ColumnDefinition
+    {
+        return $this->addColumn($column, [
+            'type'       => 'SMALLINT',
+            'constraint' => $constraint,
+        ]);
+    }
+
+    /**
+     * Create an unsigned SMALLINT column.
+     */
+    public function unsignedSmallInteger(string $column, int $constraint = 6): ColumnDefinition
+    {
+        return $this->smallInteger($column, $constraint)->unsigned();
     }
 
     /**
@@ -160,6 +220,14 @@ class Blueprint
             'type'       => 'TINYINT',
             'constraint' => $constraint,
         ]);
+    }
+
+    /**
+     * Create an unsigned TINYINT column.
+     */
+    public function unsignedTinyInteger(string $column, int $constraint = 4): ColumnDefinition
+    {
+        return $this->tinyInteger($column, $constraint)->unsigned();
     }
 
     /**
@@ -196,12 +264,33 @@ class Blueprint
     }
 
     /**
+     * Create a DOUBLE column.
+     */
+    public function double(string $column, int $total = 8, int $places = 2): ColumnDefinition
+    {
+        return $this->addColumn($column, [
+            'type'       => 'DOUBLE',
+            'constraint' => "{$total},{$places}",
+        ]);
+    }
+
+    /**
      * Create a DATE column.
      */
     public function date(string $column): ColumnDefinition
     {
         return $this->addColumn($column, [
             'type' => 'DATE',
+        ]);
+    }
+
+    /**
+     * Create a TIME column.
+     */
+    public function time(string $column): ColumnDefinition
+    {
+        return $this->addColumn($column, [
+            'type' => 'TIME',
         ]);
     }
 
@@ -266,19 +355,42 @@ class Blueprint
     }
 
     /**
-     * Create an unsigned BIGINT column for a foreign key.
+     * Create a UUID (CHAR(36)) column.
      */
-    public function foreignId(string $column): ColumnDefinition
+    public function uuid(string $column = 'uuid'): ColumnDefinition
     {
-        return $this->unsignedBigInteger($column);
+        return $this->char($column, 36);
+    }
+
+    /**
+     * Create an unsigned BIGINT column for a foreign key.
+     *
+     * Chain `->constrained()` to automatically add the foreign key constraint
+     * (e.g. `$table->foreignId('user_id')->constrained()`).
+     */
+    public function foreignId(string $column, int $constraint = 20): ColumnDefinition
+    {
+        return $this->unsignedBigInteger($column, $constraint);
+    }
+
+    /**
+     * Create a UUID (CHAR(36)) column for a foreign key.
+     *
+     * Chain `->constrained()` to automatically add the foreign key constraint.
+     */
+    public function foreignUuid(string $column): ColumnDefinition
+    {
+        return $this->uuid($column);
     }
 
     /**
      * Specify a foreign key constraint for the table.
+     *
+     * @param string|array<int, string> $column
      */
-    public function foreign(string $column): ForeignKeyDefinition
+    public function foreign($column, string $name = ''): ForeignKeyDefinition
     {
-        $fk = new ForeignKeyDefinition($column);
+        $fk = new ForeignKeyDefinition($column, $name);
         $this->foreignKeys[] = $fk;
 
         return $fk;
@@ -289,12 +401,13 @@ class Blueprint
      *
      * @param string|array<int, string> $columns
      */
-    public function primary($columns): self
+    public function primary($columns, string $name = ''): self
     {
         $this->keys[] = [
             'columns' => $columns,
             'primary' => true,
             'unique'  => false,
+            'name'    => $name,
         ];
 
         return $this;
@@ -305,12 +418,13 @@ class Blueprint
      *
      * @param string|array<int, string> $columns
      */
-    public function index($columns): self
+    public function index($columns, string $name = ''): self
     {
         $this->keys[] = [
             'columns' => $columns,
             'primary' => false,
             'unique'  => false,
+            'name'    => $name,
         ];
 
         return $this;
@@ -321,12 +435,13 @@ class Blueprint
      *
      * @param string|array<int, string> $columns
      */
-    public function unique($columns): self
+    public function unique($columns, string $name = ''): self
     {
         $this->keys[] = [
             'columns' => $columns,
             'primary' => false,
             'unique'  => true,
+            'name'    => $name,
         ];
 
         return $this;
@@ -346,7 +461,73 @@ class Blueprint
     }
 
     /**
-     * Get the compiled Forge fields array.
+     * Indicate that the given foreign key should be dropped.
+     *
+     * Accepts either an explicit constraint name (e.g. `posts_user_id_foreign`)
+     * or an array of column names (e.g. `['user_id']`).
+     *
+     * @param string|array<int, string> $index
+     */
+    public function dropForeign($index): self
+    {
+        if (is_array($index)) {
+            $index = $this->table . '_' . implode('_', $index) . '_foreign';
+        }
+
+        $this->dropForeignKeys[] = $index;
+
+        return $this;
+    }
+
+    /**
+     * Drop a foreign key constraint and its associated column.
+     */
+    public function dropConstrainedForeignId(string $column): self
+    {
+        $this->dropForeign([$column]);
+        $this->dropColumn($column);
+
+        return $this;
+    }
+
+    /**
+     * Indicate that the given index should be dropped.
+     *
+     * @param string|array<int, string> $index
+     */
+    public function dropIndex($index): self
+    {
+        if (is_array($index)) {
+            $index = implode('_', $index);
+        }
+
+        $this->dropKeys[] = $index;
+
+        return $this;
+    }
+
+    /**
+     * Indicate that the given unique index should be dropped.
+     *
+     * @param string|array<int, string> $index
+     */
+    public function dropUnique($index): self
+    {
+        return $this->dropIndex($index);
+    }
+
+    /**
+     * Indicate that the primary key should be dropped.
+     */
+    public function dropPrimary(string $keyName = ''): self
+    {
+        $this->dropPrimaryKeys[] = $keyName;
+
+        return $this;
+    }
+
+    /**
+     * Get the compiled Forge fields array for all columns.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -361,9 +542,43 @@ class Blueprint
     }
 
     /**
+     * Get the compiled Forge fields array for columns to be added.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getAddedFields(): array
+    {
+        $fields = [];
+        foreach ($this->columns as $name => $column) {
+            if (! $column->isChange()) {
+                $fields[$name] = $column->toArray();
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Get the compiled Forge fields array for columns to be modified.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getModifiedFields(): array
+    {
+        $fields = [];
+        foreach ($this->columns as $name => $column) {
+            if ($column->isChange()) {
+                $fields[$name] = $column->toArray();
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
      * Get the registered index/key definitions.
      *
-     * @return array<int, array{columns: string|array, primary: bool, unique: bool}>
+     * @return array<int, array{columns: string|array, primary: bool, unique: bool, name: string}>
      */
     public function getKeys(): array
     {
@@ -388,5 +603,35 @@ class Blueprint
     public function getDropColumns(): array
     {
         return $this->dropColumns;
+    }
+
+    /**
+     * Get foreign key names to drop when altering a table.
+     *
+     * @return array<int, string>
+     */
+    public function getDropForeignKeys(): array
+    {
+        return $this->dropForeignKeys;
+    }
+
+    /**
+     * Get index/key names to drop when altering a table.
+     *
+     * @return array<int, string>
+     */
+    public function getDropKeys(): array
+    {
+        return $this->dropKeys;
+    }
+
+    /**
+     * Get primary keys to drop when altering a table.
+     *
+     * @return array<int, string>
+     */
+    public function getDropPrimaryKeys(): array
+    {
+        return $this->dropPrimaryKeys;
     }
 }
