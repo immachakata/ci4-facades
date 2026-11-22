@@ -22,11 +22,36 @@ class ColumnDefinition
      */
     protected string $name;
 
+    /**
+     * Whether this column definition modifies an existing column.
+     */
+    protected bool $change = false;
+
     public function __construct(Blueprint $blueprint, string $name, array $attributes = [])
     {
         $this->blueprint  = $blueprint;
         $this->name       = $name;
         $this->attributes = $attributes;
+    }
+
+    /**
+     * Get the original column name.
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Get the effective column name (accounting for renames).
+     */
+    protected function getEffectiveName(): string
+    {
+        if (isset($this->attributes['name']) && is_string($this->attributes['name']) && $this->attributes['name'] !== '') {
+            return $this->attributes['name'];
+        }
+
+        return $this->name;
     }
 
     /**
@@ -79,18 +104,18 @@ class ColumnDefinition
     /**
      * Add a primary key index on this column.
      */
-    public function primary(): self
+    public function primary(string $name = ''): self
     {
-        $this->blueprint->primary($this->name);
+        $this->blueprint->primary($this->getEffectiveName(), $name);
         return $this;
     }
 
     /**
      * Add an index on this column.
      */
-    public function index(): self
+    public function index(string $name = ''): self
     {
-        $this->blueprint->index($this->name);
+        $this->blueprint->index($this->getEffectiveName(), $name);
         return $this;
     }
 
@@ -119,6 +144,56 @@ class ColumnDefinition
     {
         $this->attributes['first'] = true;
         return $this;
+    }
+
+    /**
+     * Mark this column definition as modifying an existing column.
+     */
+    public function change(bool $value = true): self
+    {
+        $this->change = $value;
+        return $this;
+    }
+
+    /**
+     * Determine whether this column definition is a modification.
+     */
+    public function isChange(): bool
+    {
+        return $this->change;
+    }
+
+    /**
+     * Rename the column during a column modification.
+     */
+    public function renameTo(string $newName): self
+    {
+        $this->attributes['name'] = $newName;
+        $this->change             = true;
+        return $this;
+    }
+
+    /**
+     * Create a foreign key constraint on this column.
+     *
+     * When `$table` is omitted, it is inferred from the column name
+     * (e.g. `user_id` -> `users.id`).
+     */
+    public function constrained(?string $table = null, string $column = 'id', ?string $indexName = null): ForeignKeyDefinition
+    {
+        return $this->blueprint
+            ->foreign($this->getEffectiveName())
+            ->constrained($table, $column, $indexName);
+    }
+
+    /**
+     * Specify the referenced column for a foreign key constraint on this column.
+     */
+    public function references(string $column, ?string $indexName = null): ForeignKeyDefinition
+    {
+        return $this->blueprint
+            ->foreign($this->getEffectiveName(), $indexName ?? '')
+            ->references($column);
     }
 
     /**
