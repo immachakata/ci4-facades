@@ -324,6 +324,9 @@ class ForeignKeyDefinition
                 'hero'       => 'heroes',
                 'potato'     => 'potatoes',
                 'tomato'     => 'tomatoes',
+                'leaf'       => 'leaves',
+                'loaf'       => 'loaves',
+                'thief'      => 'thieves',
             ];
 
             if (isset($irregular[$lower])) {
