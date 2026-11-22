@@ -56,7 +56,7 @@ class Schema
         $forge->addField($blueprint->getFields());
 
         foreach ($blueprint->getKeys() as $key) {
-            $forge->addKey($key['columns'], $key['primary'], $key['unique']);
+            self::applyKey($forge, $key);
         }
 
         foreach ($blueprint->getForeignKeys() as $foreignKey) {
@@ -76,15 +76,70 @@ class Schema
 
         $forge = self::forge();
 
-        $fields = $blueprint->getFields();
-        if (! empty($fields)) {
-            $forge->addColumn($table, $fields);
+        foreach ($blueprint->getDropForeignKeys() as $foreignKey) {
+            $forge->dropForeignKey($table, $foreignKey);
+        }
+
+        foreach ($blueprint->getDropPrimaryKeys() as $primaryKey) {
+            if (method_exists($forge, 'dropPrimaryKey')) {
+                if ($primaryKey !== '') {
+                    $forge->dropPrimaryKey($table, $primaryKey);
+                } else {
+                    $forge->dropPrimaryKey($table);
+                }
+            }
+        }
+
+        foreach ($blueprint->getDropKeys() as $key) {
+            $forge->dropKey($table, $key);
+        }
+
+        $addedFields = $blueprint->getAddedFields();
+        if (! empty($addedFields)) {
+            $forge->addColumn($table, $addedFields);
+        }
+
+        $modifiedFields = $blueprint->getModifiedFields();
+        if (! empty($modifiedFields)) {
+            $forge->modifyColumn($table, $modifiedFields);
+        }
+
+        $keys        = $blueprint->getKeys();
+        $foreignKeys = $blueprint->getForeignKeys();
+        if (! empty($keys) || ! empty($foreignKeys)) {
+            foreach ($keys as $key) {
+                self::applyKey($forge, $key);
+            }
+
+            foreach ($foreignKeys as $foreignKey) {
+                $foreignKey->applyTo($forge);
+            }
+
+            if (method_exists($forge, 'processIndexes')) {
+                $forge->processIndexes($table);
+            }
         }
 
         $dropColumns = $blueprint->getDropColumns();
         foreach ($dropColumns as $column) {
             $forge->dropColumn($table, $column);
         }
+    }
+
+    /**
+     * Apply an index/key definition to a CodeIgniter Forge instance.
+     *
+     * @param object                                                               $forge
+     * @param array{columns: string|array, primary: bool, unique: bool, name?: string} $key
+     */
+    protected static function applyKey($forge, array $key): void
+    {
+        if (! empty($key['name'])) {
+            $forge->addKey($key['columns'], $key['primary'], $key['unique'], $key['name']);
+            return;
+        }
+
+        $forge->addKey($key['columns'], $key['primary'], $key['unique']);
     }
 
     /**
